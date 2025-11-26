@@ -1,0 +1,17 @@
+# build outputs
+/build/
+/build-*/
+*.o
+*.obj
+*.exe
+*.dll
+*.dylib
+*.so
+*.a
+*.lib
+# editor junk
+.DS_Store
+*.swp
+# your demo outputs
+out/
+keys/
