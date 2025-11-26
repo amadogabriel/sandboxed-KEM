@@ -1,0 +1,58 @@
+name: build-matrix
+on:
+  push: { branches: ["main"] }
+  pull_request: {}
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install deps (Linux)
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential cmake ninja-build pkg-config libssl-dev
+          # liboqs: build from source
+          git clone --depth=1 https://github.com/open-quantum-safe/liboqs
+          cmake -S liboqs -B liboqs/build -DOQS_BUILD_ONLY_LIB=ON
+          cmake --build liboqs/build --config Release
+          sudo cmake --install liboqs/build
+
+      - name: Install deps (macOS)
+        if: matrix.os == 'macos-latest'
+        run: |
+          brew update
+          brew install liboqs openssl@3 cmake ninja pkg-config
+
+      - name: Install deps (Windows)
+        if: matrix.os == 'windows-latest'
+        shell: bash
+        run: |
+          choco install -y cmake ninja git
+          # Build and install OpenSSL (prebuilt may exist on runner, but we build to be safe)
+          git clone --depth=1 https://github.com/openssl/openssl
+          (cd openssl && perl Configure VC-WIN64A && nmake && nmake install) || true
+          # Build liboqs (uses MSVC)
+          git clone --depth=1 https://github.com/open-quantum-safe/liboqs
+          cmake -S liboqs -B liboqs/build -DOQS_BUILD_ONLY_LIB=ON -G "Ninja"
+          cmake --build liboqs/build --config Release
+          cmake --install liboqs/build
+
+      - name: Configure
+        run: cmake -S . -B build -G Ninja
+
+      - name: Build
+        run: cmake --build build --config Release
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: pqc_box-${{ matrix.os }}
+          path: |
+            build/pqc_box
+            build/Release/pqc_box.exe
