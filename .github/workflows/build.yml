@@ -19,8 +19,19 @@ jobs:
           cmake --build liboqs/build --config Release
           cmake --install liboqs/build
 
+          echo "=== Searching for liboqs installation ==="
+          find "/c" -maxdepth 6 -type f -iname "liboqsConfig.cmake" || true
+
       - name: Setup MSVC environment
         uses: ilammy/msvc-dev-cmd@v1
+
+      - name: Locate liboqs prefix
+        id: findliboqs
+        shell: bash
+        run: |
+          PREFIX=$(find "/c" -maxdepth 6 -type f -iname "liboqsConfig.cmake" | sed 's|/lib/cmake.*||' | head -n 1)
+          echo "Found prefix: $PREFIX"
+          echo "prefix=$PREFIX" >> "$GITHUB_OUTPUT"
 
       - name: Configure (MSVC + Ninja)
         shell: bash
@@ -28,7 +39,7 @@ jobs:
           cmake -S . -B build -G "Ninja" \
             -DCMAKE_BUILD_TYPE=Release \
             -DCMAKE_C_COMPILER=cl.exe \
-            -DCMAKE_PREFIX_PATH="C:/Program Files/liboqs"
+            -DCMAKE_PREFIX_PATH="${{ steps.findliboqs.outputs.prefix }}"
 
       - name: Build
         run: cmake --build build --config Release
