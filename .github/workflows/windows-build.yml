@@ -1,0 +1,41 @@
+name: Windows Build
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+permissions:
+  contents: read
+
+jobs:
+  build-windows:
+    name: Build on Windows (MSVC)
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      # Setup CMake + Ninja + MSVC environment
+      - name: Setup MSVC + CMake
+        uses: aminya/setup-cpp@v1
+        with:
+          compiler: msvc
+          vcvarsall: true
+          cmake: true
+          ninja: true
+
+      - name: Configure (Release)
+        run: cmake -S . -B build -G "Ninja" -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build
+        run: cmake --build build --config Release
+
+      # Optional: Upload built binaries as an artifact
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: sandboxed-kem-windows
+          path: build/**
