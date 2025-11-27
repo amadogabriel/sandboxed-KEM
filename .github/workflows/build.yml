@@ -28,7 +28,7 @@ jobs:
           cmake -S . -B build -G "Ninja" \
             -DCMAKE_BUILD_TYPE=Release \
             -DCMAKE_C_COMPILER=cl.exe \
-            -DCMAKE_PREFIX_PATH="C:/Program Files/liboqs"
+            -DCMAKE_PREFIX_PATH="C:/Program Files (x86)/liboqs"
 
       - name: Build
         run: cmake --build build --config Release
