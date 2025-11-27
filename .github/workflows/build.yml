@@ -13,7 +13,8 @@ jobs:
       - name: Install dependencies (Windows)
         shell: bash
         run: |
-          choco install -y cmake ninja git
+          choco install -y cmake ninja
+          # Git is already preinstalled -- don't install it
           git clone --depth=1 https://github.com/open-quantum-safe/liboqs
           cmake -S liboqs -B liboqs/build -DOQS_BUILD_ONLY_LIB=ON -G "Ninja"
           cmake --build liboqs/build --config Release
