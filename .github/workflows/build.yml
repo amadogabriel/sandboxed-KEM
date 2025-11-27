@@ -14,7 +14,6 @@ jobs:
         shell: bash
         run: |
           choco install -y cmake ninja
-          # Git preinstalled, do NOT install it
           git clone --depth=1 https://github.com/open-quantum-safe/liboqs
           cmake -S liboqs -B liboqs/build -G "Ninja" -DOQS_BUILD_ONLY_LIB=ON
           cmake --build liboqs/build --config Release
@@ -24,7 +23,12 @@ jobs:
         uses: ilammy/msvc-dev-cmd@v1
 
       - name: Configure (MSVC + Ninja)
-        run: cmake -S . -B build -G "Ninja" -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=cl.exe
+        shell: bash
+        run: |
+          cmake -S . -B build -G "Ninja" \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_C_COMPILER=cl.exe \
+            -DCMAKE_PREFIX_PATH="C:/Program Files/liboqs"
 
       - name: Build
         run: cmake --build build --config Release
