@@ -10,26 +10,27 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install dependencies (Windows)
+      - name: Install dependencies
         shell: bash
         run: |
           choco install -y cmake ninja
-          # Git is already preinstalled -- don't install it
+          # Git preinstalled, do NOT install it
           git clone --depth=1 https://github.com/open-quantum-safe/liboqs
-          cmake -S liboqs -B liboqs/build -DOQS_BUILD_ONLY_LIB=ON -G "Ninja"
+          cmake -S liboqs -B liboqs/build -G "Ninja" -DOQS_BUILD_ONLY_LIB=ON
           cmake --build liboqs/build --config Release
           cmake --install liboqs/build
 
-      - name: Configure CMake (Windows)
-        run: cmake -S . -B build -G "Ninja" -DCMAKE_BUILD_TYPE=Release
+      - name: Setup MSVC environment
+        uses: ilammy/msvc-dev-cmd@v1
 
-      - name: Build (Windows)
+      - name: Configure (MSVC + Ninja)
+        run: cmake -S . -B build -G "Ninja" -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=cl.exe
+
+      - name: Build
         run: cmake --build build --config Release
 
-      - name: Upload artifact (Windows)
+      - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: pqc_box-windows
-          path: |
-            build/pqc_box.exe
-            build/Release/pqc_box.exe
+          path: build/pqc_box.exe
