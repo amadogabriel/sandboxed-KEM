@@ -10,9 +10,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # Set up MSVC toolchain
       - name: Setup MSVC environment
         uses: ilammy/msvc-dev-cmd@v1
 
+      # Build and install liboqs using MSVC
       - name: Install dependencies (liboqs with MSVC)
         shell: bash
         run: |
@@ -24,13 +26,16 @@ jobs:
           cmake --build liboqs/build --config Release
           cmake --install liboqs/build
 
+      # Find where liboqs was installed and expose its prefix
       - name: Locate liboqs prefix
         id: findliboqs
         shell: bash
         run: |
           PREFIX=$(find "/c" -maxdepth 6 -type f -iname "liboqsConfig.cmake" | sed 's|/lib/cmake.*||' | head -n 1)
+          echo "Found liboqs prefix: $PREFIX"
           echo "prefix=$PREFIX" >> "$GITHUB_OUTPUT"
 
+      # Configure your project with MSVC + Ninja and the liboqs prefix
       - name: Configure (MSVC + Ninja)
         shell: bash
         run: |
@@ -39,11 +44,29 @@ jobs:
             -DCMAKE_C_COMPILER=cl.exe \
             -DCMAKE_PREFIX_PATH="${{ steps.findliboqs.outputs.prefix }}"
 
+      # Build pqc_box.exe
       - name: Build
         run: cmake --build build --config Release
 
+      # Copy the whole OpenSSL installation into the artifact
+      - name: Bundle OpenSSL directory
+        shell: bash
+        run: |
+          mkdir -p build/openssl
+          # Try common install locations
+          if [ -d "/c/Program Files/OpenSSL" ]; then
+            cp -r "/c/Program Files/OpenSSL"/* build/openssl/
+          elif [ -d "/c/Program Files/OpenSSL-Win64" ]; then
+            cp -r "/c/Program Files/OpenSSL-Win64"/* build/openssl/
+          else
+            echo "OpenSSL directory not found under Program Files."
+          fi
+
+      # Upload exe + full OpenSSL folder as artifact
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: pqc_box-windows
-          path: build/pqc_box.exe
+          path: |
+            build/pqc_box.exe
+            build/openssl/**
