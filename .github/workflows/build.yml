@@ -1,0 +1,34 @@
+name: windows-build
+on:
+  push: { branches: ["main"] }
+  pull_request: {}
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies (Windows)
+        shell: bash
+        run: |
+          choco install -y cmake ninja git
+          git clone --depth=1 https://github.com/open-quantum-safe/liboqs
+          cmake -S liboqs -B liboqs/build -DOQS_BUILD_ONLY_LIB=ON -G "Ninja"
+          cmake --build liboqs/build --config Release
+          cmake --install liboqs/build
+
+      - name: Configure CMake (Windows)
+        run: cmake -S . -B build -G "Ninja" -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build (Windows)
+        run: cmake --build build --config Release
+
+      - name: Upload artifact (Windows)
+        uses: actions/upload-artifact@v4
+        with:
+          name: pqc_box-windows
+          path: |
+            build/pqc_box.exe
+            build/Release/pqc_box.exe
