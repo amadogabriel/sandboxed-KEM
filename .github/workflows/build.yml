@@ -10,27 +10,25 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install dependencies
+      - name: Setup MSVC environment
+        uses: ilammy/msvc-dev-cmd@v1
+
+      - name: Install dependencies (liboqs with MSVC)
         shell: bash
         run: |
           choco install -y cmake ninja
           git clone --depth=1 https://github.com/open-quantum-safe/liboqs
-          cmake -S liboqs -B liboqs/build -G "Ninja" -DOQS_BUILD_ONLY_LIB=ON
+          cmake -S liboqs -B liboqs/build -G "Ninja" \
+            -DOQS_BUILD_ONLY_LIB=ON \
+            -DCMAKE_C_COMPILER=cl.exe
           cmake --build liboqs/build --config Release
           cmake --install liboqs/build
-
-          echo "=== Searching for liboqs installation ==="
-          find "/c" -maxdepth 6 -type f -iname "liboqsConfig.cmake" || true
-
-      - name: Setup MSVC environment
-        uses: ilammy/msvc-dev-cmd@v1
 
       - name: Locate liboqs prefix
         id: findliboqs
         shell: bash
         run: |
           PREFIX=$(find "/c" -maxdepth 6 -type f -iname "liboqsConfig.cmake" | sed 's|/lib/cmake.*||' | head -n 1)
-          echo "Found prefix: $PREFIX"
           echo "prefix=$PREFIX" >> "$GITHUB_OUTPUT"
 
       - name: Configure (MSVC + Ninja)
